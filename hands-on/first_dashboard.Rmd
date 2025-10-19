@@ -1,0 +1,192 @@
+---
+title: "채널 트래픽 분석"
+output: 
+  flexdashboard::flex_dashboard:
+    theme:
+      version: 4
+      fg: "#605CA8"
+      bg: "#FDF7F7"
+      primary: "#605CA8"
+      navbar-bg: "#3ADAC6"
+    orientation: rows
+    vertical_layout: fill
+---
+
+```{r setup, include=FALSE}
+library(flexdashboard)
+library(tidyverse)
+library(magrittr)
+library(ggthemes)
+library(plotly)
+```
+
+
+```{r userdefine-functions, include=FALSE}
+source("user_defined.R")
+```
+
+
+```{css}
+.value-box .value {
+    color: white;
+}
+
+.value-box .caption {
+    color: white;
+}
+
+.nav-tabs-custom > .nav-tabs > li.active > a, .nav-tabs-custom > .nav-tabs > li.active:hover > a {
+    background-color: #FDF7F7;
+    color: #000000;
+    font-weight: 500;
+}
+```
+
+
+Audience Indicator {data-icon="fa-user"}
+=====================================  
+
+Row {data-width=100}
+-------------------------------------
+
+### 사용자수
+
+```{r}
+valueBox(formatC(get_audience_metric("n_user", "2021-01-01", "2021-01-31"), format = "d", big.mark = ","), 
+         caption = "사용자수", color = "#3C8DBC", icon = "fa-users")
+```
+
+### 세션수
+
+```{r}
+valueBox(formatC(get_audience_metric("n_session", "2021-01-01", "2021-01-31"), format = "d", big.mark = ","), 
+         caption = "세션수", color = "#3C8DBC", icon = "fa-comments")
+```
+
+### 화면뷰
+
+```{r}
+valueBox(formatC(get_audience_metric("n_screen", "2021-01-01", "2021-01-31"), format = "d", big.mark = ","), 
+         caption = "화면뷰", color = "#3C8DBC", icon = "fa-desktop")
+```
+
+
+Row {data-width=100}
+-------------------------------------
+
+### 세션당 화면뷰
+
+```{r}
+valueBox(formatC(get_audience_metric("derived_screen_per_session", "2021-01-01", "2021-01-31"), 
+                 format = "f", digits = 2),
+                 caption = "세션당 화면뷰", color = "#3D9970", icon = "fa-image")
+```
+
+### 평균 세션시간
+
+```{r}
+valueBox(formatC(get_audience_metric("derived_avg_duration", "2021-01-01", "2021-01-31") |> sec2hms(), 
+                 format = "s"), 
+         caption = "평균 세션시간", color = "#3D9970", icon = "fa-hourglass")
+```
+
+### %신규 세션
+
+```{r}
+valueBox(paste(formatC(get_audience_metric("derived_pct_newsession", "2021-01-01", "2021-01-31"), 
+                       format = "f", digits = 2), "%", sep = ""), 
+        caption = "%신규 세션", color = "#3D9970", icon = "fa-plus")
+```
+
+
+Row {.tabset .tabset-fade}
+-------------------------------------
+   
+### 사용자수
+    
+```{r}
+get_audience_trend("n_user_d1") %$% 
+  trend_plotly(date, n_user_d1, "사용자수 트랜드", "일별 접속 사용자 수")
+```
+
+### 세션수
+    
+```{r}
+get_audience_trend("n_session_d1") %$% 
+  trend_plotly(date, n_session_d1, "세션수 트랜드", "세션수")
+```
+
+### 화면뷰수
+
+```{r}
+get_audience_trend("n_screen_d1") %$% 
+  trend_plotly(date, n_screen_d1, "화면뷰 트랜드", "일별 화면뷰수")
+```
+
+### 세션당 화면뷰수
+
+```{r}
+get_audience_trend("screen_per_session") %$% 
+  trend_plotly(date, screen_per_session, "세션당 화면뷰 트랜드", "일별 세션당 화면뷰수")
+```
+
+### 평균 세션시간
+
+```{r}
+get_audience_trend("avg_duration") %$% 
+  trend_plotly(date, avg_duration, "평균 세션시간 트랜드", "일별 평균 세션시간 (단위:초)")
+```
+
+### 신규세션 비율
+
+```{r}
+get_audience_trend("pct_newsession") %$% 
+  trend_plotly(date, pct_newsession, "신규 세션 비율 트랜드", "일별 신규세션 비율 (%)")
+```
+
+Behavior Indicator {data-icon="fa-route"}
+=====================================  
+
+Row {data-width=100}
+-------------------------------------
+
+### 화면/페이지 뷰
+
+```{r}
+valueBox(formatC(get_behavior_metric("n_screen"), format = "d", big.mark = ","), 
+         caption = "화면/페이지 뷰", color = "#3C8DBC", icon = "fa-desktop")
+```
+
+### 평균 화면/페이지 시간
+
+```{r}
+valueBox(formatC(get_behavior_metric("avg_duration") |>  sec2hms(), format = "s"), 
+         caption = "평균 화면/페이지 시간", color = "#3C8DBC", icon = "fa-image")
+```
+
+### 세션당 화면/페이지 뷰
+
+```{r}
+valueBox(formatC(get_behavior_metric("screen_per_session"), format = "f", digits = 2), 
+         caption = "세션당 화면/페이지 뷰", color = "#3C8DBC", icon = "fa-hourglass")
+```
+
+
+Row {.tabset .tabset-fade}
+-------------------------------------
+   
+### 화면 조회 현황
+
+```{r}
+DT::datatable(
+  get_screen_list(),
+  options = list(
+    lengthMenu = list(c(5, 10, 15, -1), c('5', '10', '15', 'All')),
+    pageLength = 10
+  )
+) |> 
+  DT::formatCurrency(c("조회수", "이탈수"), currency = "", interval = 3, 
+                 mark = ",", digits = 0)  
+```
+
+
